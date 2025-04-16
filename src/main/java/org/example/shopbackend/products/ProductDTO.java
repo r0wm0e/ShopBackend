@@ -1,10 +1,8 @@
 package org.example.shopbackend.products;
 
-import lombok.Getter;
-import lombok.Setter;
+import lombok.Data;
 
-@Getter
-@Setter
+@Data
 public class ProductDTO {
 
     private String name;
