@@ -43,7 +43,7 @@ public class CartService {
         Product products = productService.findById(productId);
 
         products.setCart(null);
-        productService.saveProduct(products);
+        productService.save(products);
 
         double totalAmount = cart.getProducts().stream()
                 .mapToDouble(Product::getPrice)
