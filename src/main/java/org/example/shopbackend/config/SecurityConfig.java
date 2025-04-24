@@ -12,7 +12,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 
 
-@AllArgsConstructor
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
@@ -24,10 +23,10 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/register", "/api/auth/login").permitAll()
                         .requestMatchers("/api/products/**").permitAll()
-                        .requestMatchers("/api/carts/**").permitAll()
+                        .requestMatchers("/api/cart/**").permitAll()
                         .requestMatchers("/api/products/create").permitAll()
                         .requestMatchers("/api/products/id/{id}/image").permitAll()
-                        .anyRequest().authenticated()
+                        .anyRequest().permitAll()
                 )
 //                .formLogin(Customizer.withDefaults());
                 .httpBasic(Customizer.withDefaults());

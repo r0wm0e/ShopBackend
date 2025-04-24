@@ -24,9 +24,14 @@ public class Cart {
 
     @OneToMany(mappedBy = "cart", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonManagedReference
-    private List<Product> products = new ArrayList<>();
+    private List<CartItem> items = new ArrayList<>();
 
     @JsonProperty("totalAmount")
     private Double totalAmount;
 
+    public void calculateTotalAmount() {
+        this.totalAmount = items.stream()
+                .mapToDouble(item -> item.getProduct().getPrice() * item.getQuantity())
+                .sum();
+    }
 }

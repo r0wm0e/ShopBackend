@@ -1,57 +1,89 @@
 package org.example.shopbackend.cart;
 
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.example.shopbackend.products.Product;
-import org.example.shopbackend.products.ProductService;
+import org.example.shopbackend.products.ProductRepository;
 import org.springframework.stereotype.Service;
-
-import java.util.ArrayList;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
 public class CartService {
 
     private final CartRepository cartRepository;
-    private final ProductService productService;
+    private final ProductRepository productRepository;
+    private final CartItemRepository cartItemRepository;
 
-    public Cart addProductToCart(Long cartId, Long productId) {
-        Cart cart = cartRepository.findById(cartId)
-                .orElseGet(() -> {
-                    Cart newCart = new Cart();
-                    newCart.setProducts(new ArrayList<>());
-                    newCart.setTotalAmount(0.0);
-                    return cartRepository.save(newCart);
-                });
-        Product product = productService.findById(productId);
-
-        product.setCart(cart);
-        cart.getProducts().add(product);
-
-        double totalAmount = cart.getProducts().stream()
-                .mapToDouble(Product::getPrice)
-                .sum();
-        cart.setTotalAmount(totalAmount);
-
-        return cartRepository.save(cart);
-    }
-
-    public Cart removeProductFromCart(Long cartId, Long productId) {
+    @Transactional
+    public Cart addProductToCart(Long cartId, Long productId, int quantity) {
         Cart cart = cartRepository.findById(cartId)
                 .orElseThrow(() -> new RuntimeException("Cart not found"));
 
+        Product product = productRepository.findById(productId)
+                        .orElseThrow(() -> new RuntimeException("Product not found"));
 
-        Product products = productService.findById(productId);
+        if (product.getStock() < quantity) {
+            throw new IllegalArgumentException("Not enough stock");
+        }
 
-        products.setCart(null);
-        productService.save(products);
 
-        double totalAmount = cart.getProducts().stream()
-                .mapToDouble(Product::getPrice)
-                .sum();
-        cart.setTotalAmount(totalAmount);
+        Optional<CartItem> existingItem = cart.getItems().stream()
+                .filter(item -> item.getProduct().getId().equals(productId))
+                .findFirst();
 
-        cartRepository.save(cart);
-        return cart;
+        if (existingItem.isPresent()) {
+            CartItem item = existingItem.get();
+            int newQuantity = item.getQuantity() + quantity;
+
+            if (product.getStock() < newQuantity) {
+                throw new IllegalArgumentException("Not enough stock for updated quantity");
+            }
+            item.setQuantity(newQuantity);
+        } else {
+            CartItem item = CartItem.builder()
+                    .cart(cart)
+                    .product(product)
+                    .quantity(quantity)
+                    .build();
+            cart.getItems().add(item);
+        }
+
+        cart.calculateTotalAmount();
+        return cartRepository.save(cart);
+    }
+
+    @Transactional
+    public Cart updateQuantity(Long cartId, Long productId, int newQuantity) {
+        Cart cart = cartRepository.findById(cartId)
+                .orElseThrow(() -> new IllegalArgumentException("Cart not found"));
+
+        CartItem item = cart.getItems().stream()
+                .filter(i -> i.getProduct().getId().equals(productId))
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("Product not in cart"));
+
+        if (newQuantity <= 0) {
+            cart.getItems().remove(item);
+        } else {
+            if (item.getProduct().getStock() < newQuantity) {
+                throw new IllegalArgumentException("Not enough stock for product ID " + productId);
+            }
+            item.setQuantity(newQuantity);
+        }
+
+        cart.calculateTotalAmount();
+        return cartRepository.save(cart);
+    }
+
+    @Transactional
+    public Cart removeProductFromCart(Long cartId, Long productId) {
+        Cart cart = cartRepository.findById(cartId)
+                .orElseThrow(() -> new IllegalArgumentException("Cart not found"));
+
+        cart.getItems().removeIf(item -> item.getProduct().getId().equals(productId));
+        cart.calculateTotalAmount();
+        return cartRepository.save(cart);
     }
 
     public Cart getCart(Long cartId) {
@@ -64,7 +96,7 @@ public class CartService {
     }
 
     public Cart createCart() {
-        Cart newCart = new Cart();
+        Cart newCart = Cart.builder().build();
         return cartRepository.save(newCart);
     }
 }
