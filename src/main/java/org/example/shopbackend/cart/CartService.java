@@ -13,7 +13,6 @@ public class CartService {
 
     private final CartRepository cartRepository;
     private final ProductRepository productRepository;
-    private final CartItemRepository cartItemRepository;
 
     @Transactional
     public Cart addProductToCart(Long cartId, Long productId, int quantity) {
