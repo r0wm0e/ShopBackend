@@ -38,11 +38,6 @@ public class Product {
     private String imageUrl;
 
     @ManyToOne
-    @JoinColumn(name = "cart_id")
-    @JsonBackReference
-    private Cart cart;
-
-    @ManyToOne
     @JoinColumn(name = "category_id")
     @JsonProperty("category")
     private Category category;

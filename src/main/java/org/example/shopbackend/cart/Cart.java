@@ -4,8 +4,6 @@ import com.fasterxml.jackson.annotation.JsonManagedReference;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import lombok.*;
-import org.example.shopbackend.products.Product;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -30,8 +28,10 @@ public class Cart {
     private Double totalAmount;
 
     public void calculateTotalAmount() {
-        this.totalAmount = items.stream()
-                .mapToDouble(item -> item.getProduct().getPrice() * item.getQuantity())
-                .sum();
+        double total = 0.0;
+        for (CartItem item : items) {
+            total += item.getProduct().getPrice() * item.getQuantity();
+        }
+        this.totalAmount = total;
     }
 }

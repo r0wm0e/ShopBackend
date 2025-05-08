@@ -2,13 +2,14 @@ package org.example.shopbackend.cart;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.example.shopbackend.products.Product;
 import org.example.shopbackend.products.ProductRepository;
 import org.springframework.stereotype.Service;
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class CartService {
 
     private final CartRepository cartRepository;
@@ -27,18 +28,22 @@ public class CartService {
         }
 
 
-        Optional<CartItem> existingItem = cart.getItems().stream()
-                .filter(item -> item.getProduct().getId().equals(productId))
-                .findFirst();
+        CartItem existingItem = null;
+        for (CartItem item : cart.getItems()) {
+            if (item.getProduct().getId().equals(productId)) {
+                existingItem = item;
+                break;
+            }
+        }
 
-        if (existingItem.isPresent()) {
-            CartItem item = existingItem.get();
-            int newQuantity = item.getQuantity() + quantity;
+        if (existingItem != null) {
+            int newQuantity = existingItem.getQuantity() + quantity;
 
             if (product.getStock() < newQuantity) {
+                log.error("Not enough stock to add product {}, quantity {}", productId, quantity);
                 throw new IllegalArgumentException("Not enough stock for updated quantity");
             }
-            item.setQuantity(newQuantity);
+            existingItem.setQuantity(newQuantity);
         } else {
             CartItem item = CartItem.builder()
                     .cart(cart)
@@ -49,7 +54,9 @@ public class CartService {
         }
 
         cart.calculateTotalAmount();
+
         return cartRepository.save(cart);
+
     }
 
     @Transactional
@@ -57,18 +64,25 @@ public class CartService {
         Cart cart = cartRepository.findById(cartId)
                 .orElseThrow(() -> new IllegalArgumentException("Cart not found"));
 
-        CartItem item = cart.getItems().stream()
-                .filter(i -> i.getProduct().getId().equals(productId))
-                .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException("Product not in cart"));
+        CartItem foundItem = null;
+        for (CartItem item : cart.getItems()) {
+            if (item.getProduct().getId().equals(productId)) {
+                foundItem = item;
+                break;
+            }
+        }
+
+        if (foundItem == null) {
+            throw new IllegalArgumentException("Product not found");
+        }
 
         if (newQuantity <= 0) {
-            cart.getItems().remove(item);
+            cart.getItems().remove(foundItem);
         } else {
-            if (item.getProduct().getStock() < newQuantity) {
+            if (foundItem.getProduct().getStock() < newQuantity) {
                 throw new IllegalArgumentException("Not enough stock for product ID " + productId);
             }
-            item.setQuantity(newQuantity);
+            foundItem.setQuantity(newQuantity);
         }
 
         cart.calculateTotalAmount();
@@ -80,22 +94,35 @@ public class CartService {
         Cart cart = cartRepository.findById(cartId)
                 .orElseThrow(() -> new IllegalArgumentException("Cart not found"));
 
-        cart.getItems().removeIf(item -> item.getProduct().getId().equals(productId));
+        CartItem itemToRemove = null;
+        for (CartItem item : cart.getItems()) {
+            if (item.getProduct().getId().equals(productId)) {
+                itemToRemove = item;
+                break;
+            }
+        }
+
+        if (itemToRemove != null) {
+            cart.getItems().remove(itemToRemove);
+        }
+
         cart.calculateTotalAmount();
         return cartRepository.save(cart);
     }
 
-    public Cart getCart(Long cartId) {
-        return cartRepository.findById(cartId)
-                .orElseGet(() -> {
-                    Cart newCart = new Cart();
-                    cartRepository.save(newCart);
-                    return newCart;
-                });
+    public Cart findById(Long cartId) {
+        return cartRepository.findById(cartId).orElseGet(() -> {
+            Cart newCart = new Cart();
+            cartRepository.save(newCart);
+            return newCart;
+        });
     }
 
     public Cart createCart() {
         Cart newCart = Cart.builder().build();
         return cartRepository.save(newCart);
+    }
+    public void save(Cart newCart) {
+        cartRepository.save(newCart);
     }
 }

@@ -1,22 +1,20 @@
 package org.example.shopbackend.cart;
 
+import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
+@AllArgsConstructor
 @RequestMapping("/api/cart")
 public class CartController {
 
     private final CartService cartService;
 
-    public CartController(CartService cartService) {
-        this.cartService = cartService;
-    }
-
     @GetMapping("/{cartId}")
     public ResponseEntity<Cart> getCart(@PathVariable Long cartId) {
-        Cart cart = cartService.getCart(cartId);
+        Cart cart = cartService.findById(cartId);
         return ResponseEntity.ok(cart);
     }
 
