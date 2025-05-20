@@ -3,7 +3,6 @@ package org.example.shopbackend.auth;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.example.shopbackend.user.User;
-import org.example.shopbackend.user.UserDTO;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -20,11 +19,11 @@ public class AuthController {
     private final AuthService authService;
 
     @PostMapping("/register")
-    public ResponseEntity<String> registerUser(@RequestBody UserDTO userDTO) {
+    public ResponseEntity<String> registerUser(@RequestBody AuthRequest authRequest) {
         try {
             User newUser = User.builder()
-                    .username(userDTO.getUsername())
-                    .password(userDTO.getPassword())
+                    .username(authRequest.getUsername())
+                    .password(authRequest.getPassword())
                     .build();
 
             String message = authService.register(newUser);

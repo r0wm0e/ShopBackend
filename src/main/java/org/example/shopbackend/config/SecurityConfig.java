@@ -34,6 +34,9 @@ public class SecurityConfig {
                         .requestMatchers("/api/stripe/**").permitAll()
                         .requestMatchers("/api/stripe/success").permitAll()
                         .requestMatchers("/api/stripe/order-details").permitAll()
+                        .requestMatchers("/api/stripe/canceled").permitAll()
+                        .requestMatchers("/api/orders/**").permitAll()
+                        .requestMatchers("/api/cart/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);

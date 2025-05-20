@@ -5,6 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.example.shopbackend.cart.Cart;
 import org.example.shopbackend.user.User;
 
 import java.time.LocalDateTime;
@@ -33,6 +34,9 @@ public class Order {
 
     @ManyToOne
     User user;
+
+    @ManyToOne
+    Cart cart;
 
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL)
     private List<OrderItem> items = new ArrayList<>();

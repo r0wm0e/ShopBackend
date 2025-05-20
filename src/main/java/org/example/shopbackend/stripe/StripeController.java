@@ -2,6 +2,7 @@ package org.example.shopbackend.stripe;
 
 import com.stripe.model.checkout.Session;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.example.shopbackend.order.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -12,6 +13,7 @@ import java.security.Principal;
 
 @RestController
 @AllArgsConstructor
+@Slf4j
 @RequestMapping("/api/stripe")
 public class StripeController {
 
@@ -26,6 +28,7 @@ public class StripeController {
             Session session = stripeService.createCheckoutSessionFromCart(username, cartId);
 
             orderService.createOrderFromCart(cartId, username, session.getId());
+            orderService.updateOrderStatus(session.getId(), OrderStatus.PENDING);
 
             return ResponseEntity.ok(session.getUrl());
 
@@ -52,5 +55,13 @@ public class StripeController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Order not found");
         }
         return ResponseEntity.ok(order);
+    }
+
+    @GetMapping("/canceled")
+    public ResponseEntity<String> canceled(@RequestParam("session_id") String sessionId) {
+        orderService.updateOrderStatus(sessionId, OrderStatus.CANCELLED);
+
+        orderService.getOrderByStripeSessionId(sessionId);
+        return ResponseEntity.ok("Hej Order cancelled with session_id: " + sessionId);
     }
 }

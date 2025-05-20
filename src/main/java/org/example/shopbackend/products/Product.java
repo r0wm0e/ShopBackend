@@ -1,11 +1,9 @@
 package org.example.shopbackend.products;
 
-import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.extern.slf4j.Slf4j;
-import org.example.shopbackend.cart.Cart;
 import org.example.shopbackend.category.Category;
 
 @Setter

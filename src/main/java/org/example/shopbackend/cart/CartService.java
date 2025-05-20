@@ -5,7 +5,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.example.shopbackend.products.Product;
 import org.example.shopbackend.products.ProductRepository;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 @Service
 @RequiredArgsConstructor
@@ -24,7 +26,7 @@ public class CartService {
                         .orElseThrow(() -> new RuntimeException("Product not found"));
 
         if (product.getStock() < quantity) {
-            throw new IllegalArgumentException("Not enough stock");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Not enough stock");
         }
 
 
@@ -62,7 +64,7 @@ public class CartService {
     @Transactional
     public Cart updateQuantity(Long cartId, Long productId, int newQuantity) {
         Cart cart = cartRepository.findById(cartId)
-                .orElseThrow(() -> new IllegalArgumentException("Cart not found"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cart not found" + cartId));
 
         CartItem foundItem = null;
         for (CartItem item : cart.getItems()) {
@@ -73,16 +75,17 @@ public class CartService {
         }
 
         if (foundItem == null) {
-            throw new IllegalArgumentException("Product not found");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Product not found" + productId);
         }
 
         if (newQuantity <= 0) {
             cart.getItems().remove(foundItem);
         } else {
             if (foundItem.getProduct().getStock() < newQuantity) {
-                throw new IllegalArgumentException("Not enough stock for product ID " + productId);
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Not enough stock for product ID " + productId);
+            } else {
+                foundItem.setQuantity(newQuantity);
             }
-            foundItem.setQuantity(newQuantity);
         }
 
         cart.calculateTotalAmount();
